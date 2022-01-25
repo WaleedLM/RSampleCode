@@ -1,0 +1,53 @@
+install.packages('tidyr')
+install.packages('tidyverse')
+
+library(tidyr)
+library(tidyverse)
+
+#PART 1#
+# need to filter to remove NAs #
+billboard <- tidyr::billboard %>%
+  dplyr::select(wk1,wk2) %>%
+  dplyr:: filter(!is.na(wk2))
+
+# need to use mutate to be able to label label that had best wk1 debut with artist and track#
+best <- tidyr::billboard %>%
+  dplyr::select(artist,track,wk1,wk2) %>%
+  dplyr::filter(wk1 == min(wk1)) %>%
+  dplyr::mutate(labz = paste(artist, "; ",track,sep=""))
+
+
+#Start of the scatterplot#
+ggplot(billboard,aes(wk1,wk2)) + geom_point(color = "blue") +
+  geom_point(color = "red",size = 3, data = qz)+
+  ggrepel::geom_label_repel(aes(label = labz), data = best) +
+  labs(title = "Billboard Top 100: Week 1 & Week 2 Rankings",
+       subtle = "From Year 2000", caption = "Note: Songs that were dropped in week two were omitted") +
+        scale_y_continuous(name = "Week 2 Ranking",breaks = seq(0,100,by=5)) +
+        scale_x_continuous(name = "Week 1 Ranking" ,breaks = seq(0,100,by=5)) +
+  theme(axis.title.y = element_text(angle = 0,vjust=0.5))
+
+#Questions before class were very helpful. I was confused on the apply statement, but my questions were answered# 
+
+
+#part 2#
+
+df1 <- dplyr::bind_cols(
+      tidyr::billboard %>%
+        dplyr::select(artist,track),
+      
+      apply(tidyr::billboard[,-c(1:3)],1,FUN=function(x)
+        {return(sum(!is.na(x)))}
+        )
+)
+
+names(df1)[3] <- "Weeks"
+#order to get the top 5 songs#
+df1 <- df1 %>%
+  dplyr::arrange(desc(Weeks)) %>%
+  head(5)
+#Building the bar chart#
+df1 %>%
+  ggplot(aes(track,Weeks))+ geom_bar(stat="identity", fill=c("blue", "red","green", "orange", "black")) +   
+  labs(title = "Billboard Top 100: Top 5 with Most Weeks Charting", x = "Track Name") +
+  scale_y_continuous(name = "Number of Weeks",breaks = seq(0,50,by=10)) 
